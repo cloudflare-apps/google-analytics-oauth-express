@@ -10,6 +10,7 @@ const oauth2Client = new OAuth2(
 
 google.options({auth: oauth2Client})
 const analytics = google.analytics('v3')
+const oauth = google.oauth2('v2')
 
 const express = require('express')
 const bodyParser = require('body-parser')
@@ -81,15 +82,27 @@ app.post('/', function (request, response) {
   })
 })
 
-app.post('/account-metadata', function (request, response) {
-  console.log(request.body)
+app.get('/account-metadata', function (request, response) {
+  oauth2Client.setCredentials({
+    access_token: request.body.account.token.token
+  })
 
-  response.json({
-    metadata: {
-      username: 'foo',
-      userId: 'bar',
-      email: 'baz'
+  oauth.userinfo.v2.me.get({}, (error, userInfo) => {
+    if (error) {
+      response.json({
+        proceed: false,
+        errors: [{type: '400', message: error.toString()}]
+      })
+      return
     }
+
+    response.json({
+      metadata: {
+        email: userInfo.email,
+        username: userInfo.email,
+        userId: userInfo.id
+      }
+    })
   })
 })
 
