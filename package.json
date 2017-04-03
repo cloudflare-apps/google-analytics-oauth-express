@@ -1,9 +1,9 @@
 {
   "name": "cloudflare-google-analytics-oauth-service",
   "version": "1.0.0",
-  "description": "An example app that ",
+  "description": "A Cloudflare service that fetches a user's Google Analytics IDs.",
   "engines": {
-    "node": "5.9.1"
+    "node": "6.3.1"
   },
   "main": "index.js",
   "scripts": {

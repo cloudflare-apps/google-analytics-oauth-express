@@ -5,8 +5,14 @@ the [GoogleAnalytics](https://github.com/CloudflareApps/GoogleAnalytics) app.
 
 ## Local Setup
 
+### Requirements
+
+- Node 6.3.1+
+
 Fill in your credentials in _credentials.json_ from the
 [Google Developer Console](https://console.developers.google.com/apis/credentials)
+
+### Usage
 
 - `npm install`
 - `npm start`
