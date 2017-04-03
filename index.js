@@ -81,6 +81,18 @@ app.post('/', function (request, response) {
   })
 })
 
+app.post('/account-metadata', function (request, response) {
+  console.log(request.body)
+
+  response.json({
+    metadata: {
+      username: 'foo',
+      userId: 'bar',
+      email: 'baz'
+    }
+  })
+})
+
 app.listen(app.get('port'), () => {
   console.log('Cloudflare Google Analytics is running on port', app.get('port'))
 })
