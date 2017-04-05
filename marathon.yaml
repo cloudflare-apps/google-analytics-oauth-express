@@ -1,0 +1,48 @@
+id: /pdx/apps/google-analytics-oauth-service
+apps:
+  - id: google-analytics-oauth-service
+    cpus: 0.1
+    mem: 512
+    instances: 2
+    ports:
+      - 0 # application
+    container:
+      type: DOCKER
+      docker:
+        image: docker.cfops.it/google-analytics-oauth-service:${VERSION}
+        network: HOST
+        parameters:
+        - key: log-driver
+          value: journald
+        - key: log-opt
+          value: tag=google_analytics_oauth_service
+        - key: log-opt
+          value: labels=log_format
+        - key: label
+          value: log_format=json
+      # Mount the PALd socket into the container so the pal tool can find it.
+      volumes:
+        - containerPath: /run/pald
+          hostPath: /run/pald
+          mode: RO
+    env:
+      APP_ENV: production
+      MARTINI_ENV: production
+      SENTRY_DSN: "https://XXX:XXX@sentry.cfops.it/143"
+      PAL_SECRETS_YAML: |
+        production:
+          env:
+    labels:
+      zoidberg_port_0_app_name: google-analytics-oauth-service.appstore.cfdata.org
+      zoidberg_port_0_balanced_by: pdx-main
+      complainer_sentry_dsn: "https://XXX:XXXb@sentry.cfops.it/143"
+    constraints:
+      - - hostname
+        - UNIQUE
+    healthChecks:
+      - protocol: HTTP
+        path: /healthcheck
+        gracePeriodSeconds: 3
+        intervalSeconds: 10
+        timeoutSeconds: 10
+        maxConsecutiveFailures: 3

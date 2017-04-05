@@ -1,8 +1,0 @@
-{
-  "name": "Google Analytics OAuth Service",
-  "description": "A Google Analytics OAuth Service for Cloudflare",
-  "repository": "https://github.com/CloudflareApps/GoogleAnalyticsOAuthService",
-  "logo": "http://node-js-sample.herokuapp.com/node.svg",
-  "keywords": ["node", "express", "cloudflare", "google-analytics"],
-  "image": "heroku/nodejs"
-}
