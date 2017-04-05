@@ -1,5 +1,5 @@
 NAME := google-analytics-oauth-service
-TARGET := google-analytics-oauth-service
+TARGET := googleanalyticsoauthservice
 IMPORT_PATH := code.cfops.it/apps/$(TARGET)
 V := 1 # When V is 1, print commands and build progress.
 IGNORED_PACKAGES := /vendor/
