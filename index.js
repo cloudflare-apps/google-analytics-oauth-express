@@ -1,11 +1,15 @@
-const credentials = require('./credentials.json')
+try {
+  credentials = require('./credentials.json')
+} catch(e){
+  credentials = false
+}
 
 const google = require('googleapis')
 const {OAuth2} = google.auth
 const oauth2Client = new OAuth2(
-  credentials.clientID,
-  credentials.clientSecret,
-  credentials.redirectURI
+  credentials ? credentials.clientID : process.env.CLIENTID,
+  credentials ? credentials.clientSecret : process.env.CLIENTSECRET,
+  credentials ? credentials.clientRedirectURI : process.env.CLIENTURI
 )
 
 google.options({auth: oauth2Client})
