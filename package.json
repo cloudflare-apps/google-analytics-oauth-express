@@ -13,6 +13,7 @@
   "dependencies": {
     "body-parser": "^1.17.1",
     "express": "4.13.3",
+    "express-prom-bundle": "^2.2.0",
     "googleapis": "^18.0.0"
   },
   "repository": {

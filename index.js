@@ -14,8 +14,11 @@ const oauth = google.oauth2('v2')
 
 const express = require('express')
 const bodyParser = require('body-parser')
+const promBundle = require('express-prom-bundle')
+const metricsMiddleware = promBundle()
 const app = express()
 
+app.use(metricsMiddleware)
 app.use(bodyParser.json())
 app.set('port', (process.env.PORT || 5000))
 
@@ -104,6 +107,10 @@ app.get('/account-metadata', function (request, response) {
       }
     })
   })
+})
+
+app.get('/healthcheck', function (request, response) {
+  response.sendStatus(200)
 })
 
 app.listen(app.get('port'), () => {
