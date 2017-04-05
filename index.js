@@ -5,7 +5,7 @@ const {OAuth2} = google.auth
 const oauth2Client = new OAuth2(
   credentials.clientID,
   credentials.clientSecret,
-  credentials.redirectURI
+  'https://www.cloudflare.com/apps/oauth/'
 )
 
 google.options({auth: oauth2Client})
