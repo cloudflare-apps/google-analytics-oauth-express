@@ -1,27 +1,26 @@
 {
-  "name": "google-analytics-oauth-service",
+  "name": "google-analytics-oauth-express",
   "version": "1.0.0",
   "description": "A Cloudflare service that fetches a user's Google Analytics IDs.",
   "engines": {
     "node": "6.3.1"
   },
   "private": true,
-  "main": "index.js",
+  "main": "app/create-app.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node app/development.js"
   },
   "dependencies": {
-    "body-parser": "^1.17.1",
+    "body-parser": "1.17.1",
     "express": "4.13.3",
-    "express-prom-bundle": "^2.2.0",
-    "googleapis": "^18.0.0"
+    "googleapis": "18.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/CloudflareApps/GoogleAnalyticsOAuthService"
+    "url": "https://github.com/CloudflareApps/GoogleAnalyticsOAuthExpress"
   },
   "license": "MIT",
   "devDependencies": {
-    "standard": "^9.0.2"
+    "standard": "9.0.2"
   }
 }

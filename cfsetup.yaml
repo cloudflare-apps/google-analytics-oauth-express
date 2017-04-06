@@ -1,9 +1,0 @@
-jessie:
-    build:
-        builddeps: nodejs
-        post-cache:
-            - make
-    test:
-        builddeps: nodejs
-        post-cache:
-            - make test
