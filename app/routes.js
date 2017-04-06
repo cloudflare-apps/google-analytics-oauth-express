@@ -3,8 +3,8 @@ const google = require('googleapis')
 module.exports = function setRoutes (app) {
   const {OAuth2} = google.auth
   const oauth2Client = new OAuth2(
-    app.set('clientID'),
-    app.set('clientSecret'),
+    app.get('clientID'),
+    app.get('clientSecret'),
     'https://www.cloudflare.com/apps/oauth/'
   )
 
