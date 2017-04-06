@@ -1,6 +1,6 @@
-# Google Analytics OAuth Service
+# Google Analytics OAuth Express
 
-This is a Cloudflare service that fetches a user's Google Analytics IDs for
+This is a Express service that fetches a user's Google Analytics IDs for
 the [GoogleAnalytics](https://github.com/CloudflareApps/GoogleAnalytics) app.
 
 ## Local Setup

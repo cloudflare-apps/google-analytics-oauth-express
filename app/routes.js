@@ -13,6 +13,9 @@ module.exports = function setRoutes (app) {
   const analytics = google.analytics('v3')
   const oauth = google.oauth2('v2')
 
+  // Primary OAuth request handler.
+  // This handler fetches Google Analytics account summaries,
+  // then populates an install field with the entries.
   app.post('/', function (request, response) {
     const {install} = request.body
 
@@ -76,6 +79,8 @@ module.exports = function setRoutes (app) {
     })
   })
 
+  // Account metadata handler.
+  // This handler fetches user info and populates the login entry with user's email address.
   app.get('/account-metadata', function (request, response) {
     oauth2Client.setCredentials({
       access_token: request.body.account.token.token
