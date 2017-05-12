@@ -83,7 +83,7 @@ module.exports = function setRoutes (app) {
   // This handler fetches user info and populates the login entry with user's email address.
   app.get('/account-metadata', function (request, response) {
     oauth2Client.setCredentials({
-      access_token: request.body.account.token.token
+      access_token: request.headers.authorization.replace('Bearer ', '')
     })
 
     oauth.userinfo.v2.me.get({}, (error, userInfo) => {
