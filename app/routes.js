@@ -75,6 +75,14 @@ module.exports = function setRoutes (app) {
 
       install.options.id = analyticsEntries[0].id
 
+      // Include link to Google Analytics Dashboard.
+      // TODO: Is it possible to link to a particular web property?
+      install.links = [{
+        title: 'Google Analytics',
+        description: 'Visit Google Analytics to track your site\'s activity.',
+        href: 'https://analytics.google.com'
+      }]
+
       response.json({install})
     })
   })
