@@ -75,16 +75,43 @@ module.exports = function setRoutes (app) {
 
       install.options.id = analyticsEntries[0].id
 
-      // Include link to Google Analytics Dashboard.
-      // TODO: Is it possible to link to a particular web property?
-      install.links = [{
-        title: 'Google Analytics',
-        description: 'Visit Google Analytics to track your site\'s activity.',
-        href: 'https://analytics.google.com'
-      }]
-
       response.json({install})
     })
+  })
+
+  // "item-add"
+  app.post('/provision-account', function (request, response) {
+    const {install} = request.body
+
+    oauth2Client.setCredentials({
+      access_token: request.body.authentications.account.token.token
+    })
+
+    const account =
+
+    analytics.management.webproperties.insert({
+      accountId: '123456',
+      resource: {
+        websiteUrl: 'http://www.examplepetstore.com',
+        name: 'Example Store'
+      }
+    })
+
+    response.json({install})
+  })
+
+  app.post('/post-install', function (request, response) {
+    const {install} = request.body
+
+    // Include link to Google Analytics Dashboard.
+    // TODO: Is it possible to link to a particular web property?
+    install.links = [{
+      title: 'Google Analytics',
+      description: 'Visit Google Analytics to track your site\'s activity.',
+      href: 'https://analytics.google.com'
+    }]
+
+    response.json({install})
   })
 
   // Account metadata handler.
