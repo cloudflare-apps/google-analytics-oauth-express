@@ -49,6 +49,15 @@ module.exports = function setRoutes (app) {
       const analyticsEntries = []
       const enumNames = {}
 
+      // TODO: Provision the account if one hasn't been created.
+      if (!accountSummaries || !accountSummaries.items) {
+        response.json({
+          proceed: false,
+          errors: [{type: '400', message: 'User does not have a Google Analytics account.'}]
+        })
+        return
+      }
+
       accountSummaries.items.forEach(item => {
         item.webProperties.forEach(properties => {
           analyticsEntries.push({
