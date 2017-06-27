@@ -33,6 +33,10 @@ module.exports = function setRoutes (app) {
       return
     }
 
+    if (!request.body.authentications || !request.body.authenticationes.account || !request.body.authentications.account.token){
+      return
+    }
+
     oauth2Client.setCredentials({
       access_token: request.body.authentications.account.token.token
     })
