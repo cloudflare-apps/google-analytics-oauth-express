@@ -17,11 +17,11 @@ module.exports = function setRoutes (app) {
   // This handler fetches Google Analytics account summaries,
   // then populates an install field with the entries.
   app.post('/', function (request, response) {
-    const {install} = request.body
+    const {install, authentications = {}} = request.body
+    const authenticated = !!(authentications.account && authentications.account.token)
 
-    if (!request.body.metadata.newValue) {
+    if (authenticated) {
       // User has logged out. Reset schema.
-
       Object.assign(install.schema.properties.id, {
         enum: null,
         enumNames: null
@@ -30,10 +30,6 @@ module.exports = function setRoutes (app) {
       install.options.id = ''
 
       response.json({install, proceed: true})
-      return
-    }
-
-    if (!request.body.authentications || !request.body.authenticationes.account || !request.body.authentications.account.token){
       return
     }
 
