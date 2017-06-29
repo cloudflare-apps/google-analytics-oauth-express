@@ -20,7 +20,7 @@ module.exports = function setRoutes (app) {
     const {install, authentications = {}} = request.body
     const authenticated = !!(authentications.account && authentications.account.token)
 
-    if (authenticated) {
+    if (!authenticated) {
       // User has logged out. Reset schema.
       Object.assign(install.schema.properties.id, {
         enum: null,
@@ -28,6 +28,7 @@ module.exports = function setRoutes (app) {
       })
 
       install.options.id = ''
+      install.links = []
 
       response.json({install, proceed: true})
       return
