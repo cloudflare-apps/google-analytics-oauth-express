@@ -1,6 +1,6 @@
 {
   "name": "google-analytics-oauth-express",
-  "version": "1.1.1",
+  "version": "1.4.0",
   "description": "A Cloudflare service that fetches a user's Google Analytics IDs.",
   "engines": {
     "node": "6.3.1"

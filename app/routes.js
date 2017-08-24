@@ -17,17 +17,18 @@ module.exports = function setRoutes (app) {
   // This handler fetches Google Analytics account summaries,
   // then populates an install field with the entries.
   app.post('/', function (request, response) {
-    const {install} = request.body
+    const {install, authentications = {}} = request.body
+    const authenticated = !!(authentications.account && authentications.account.token)
 
-    if (!request.body.metadata.newValue) {
+    if (!authenticated) {
       // User has logged out. Reset schema.
-
       Object.assign(install.schema.properties.id, {
         enum: null,
         enumNames: null
       })
 
       install.options.id = ''
+      install.links = []
 
       response.json({install, proceed: true})
       return
@@ -48,6 +49,15 @@ module.exports = function setRoutes (app) {
 
       const analyticsEntries = []
       const enumNames = {}
+
+      // TODO: Provision the account if one hasn't been created.
+      if (!accountSummaries || !accountSummaries.items) {
+        response.json({
+          proceed: false,
+          errors: [{type: '400', message: 'User does not have a Google Analytics account.'}]
+        })
+        return
+      }
 
       accountSummaries.items.forEach(item => {
         item.webProperties.forEach(properties => {
