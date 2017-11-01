@@ -1,4 +1,6 @@
 const google = require('googleapis')
+const WEB_PROPERTY_PREFIX = 'web-properties-for-'
+const webPropertyLabel = property => `${property.name} (${property.id})`
 
 module.exports = function setRoutes (app) {
   const {OAuth2} = google.auth
@@ -22,10 +24,19 @@ module.exports = function setRoutes (app) {
 
     if (!authenticated) {
       // User has logged out. Reset schema.
-      Object.assign(install.schema.properties.id, {
+      const {webPropertySchemaNames = []} = install.options
+
+      webPropertySchemaNames.forEach(schemaName => {
+        delete install.schema.properties[schemaName]
+        delete install.options[webPropertySchemaNames]
+      })
+
+      Object.assign(install.schema.properties.organization, {
         enum: null,
         enumNames: null
       })
+
+      install.options.organization = ''
 
       install.options.id = ''
       install.links = []
@@ -35,7 +46,7 @@ module.exports = function setRoutes (app) {
     }
 
     function handleAPIError (error) {
-      console.error('API Error', error)
+      console.error('OAuth Login API Error', error)
 
       response.json({
         proceed: false,
@@ -77,7 +88,6 @@ module.exports = function setRoutes (app) {
       .then(accountSummaries => {
         const accountIds = []
         const accountIdNames = {}
-        const webPropertyPrefix = 'web-properties-for-'
 
         // Populate each account as an "Organization".
         accountSummaries.items.forEach((account, index) => {
@@ -97,14 +107,16 @@ module.exports = function setRoutes (app) {
         const {webPropertyTemplate} = install.schema.properties
         const namePattern = /\$ORGANIZATION/g
 
+        install.options.webPropertySchemaNames = []
+
         accountSummaries.items.forEach((account, index) => {
-          const schemaName = webPropertyPrefix + account.id
+          const schemaName = WEB_PROPERTY_PREFIX + account.id
           const webPropertyIds = []
           const webPropertyNames = {}
 
           account.webProperties.forEach(property => {
             webPropertyIds.push(property.id)
-            webPropertyNames[property.id] = property.name
+            webPropertyNames[property.id] = webPropertyLabel(property)
           })
 
           install.schema.properties[schemaName] = Object.assign({}, webPropertyTemplate, {
@@ -120,35 +132,59 @@ module.exports = function setRoutes (app) {
           })
 
           install.options[schemaName] = webPropertyIds[0]
+          install.options.webPropertySchemaNames.push(schemaName)
         })
-
-        webPropertyTemplate.type = 'hidden'
 
         response.json({install})
       })
       .catch(handleAPIError)
   })
 
-  // "item-add"
-  app.post('/provision-property', function (request, response) {
+  app.post('/provision', function (request, response) {
+    function handleAPIError (error) {
+      console.error('Google Analytics Provision API Error', error)
+
+      response.json({
+        proceed: false,
+        errors: [{type: '400', message: error.toString()}]
+      })
+    }
+
     const {install, metadata} = request.body
 
-    console.log(request.body)
     oauth2Client.setCredentials({
       access_token: request.body.authentications.account.token.token
     })
 
-    // const account =
+    if (metadata.key.startsWith(WEB_PROPERTY_PREFIX)) {
+      analytics.management.webproperties.insert({
+        accountId: metadata.key.replace(WEB_PROPERTY_PREFIX, ''),
+        resource: {
+          websiteUrl: metadata.item.url,
+          name: metadata.item.name
+        }
+      }, (error, property) => {
+        if (error) {
+          return handleAPIError(error)
+        }
 
-    analytics.management.webproperties.insert({
-      accountId: '123456',
-      resource: {
-        websiteUrl: metadata.item.url,
-        name: metadata.item.name
-      }
-    })
+        const schemaEntry = install.schema.properties[metadata.key]
 
-    response.json({install})
+        schemaEntry.enum = schemaEntry.enum || []
+        schemaEntry.enumNames = schemaEntry.enumNames || {}
+
+        schemaEntry.enum.push(property.id)
+        schemaEntry.enumNames[property.id] = webPropertyLabel(property)
+
+        install.options[metadata.key] = property.id
+
+        response.json({install})
+      })
+    } else if (metadata.key === 'organization') {
+      // org
+    } else {
+      handleAPIError(new Error(`Unknown metadata key ${metadata.key}`))
+    }
   })
 
   app.post('/post-install', function (request, response) {
