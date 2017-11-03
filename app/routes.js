@@ -2,6 +2,17 @@ const google = require('googleapis')
 const WEB_PROPERTY_PREFIX = 'web-properties-for-'
 const webPropertyLabel = property => `${property.name} (${property.id})`
 
+function createErrorHandler (response, prefix) {
+  return function handleAPIError (error) {
+    console.error(prefix, error)
+
+    response.json({
+      proceed: false,
+      errors: [{type: '400', message: error.toString()}]
+    })
+  }
+}
+
 module.exports = function setRoutes (app) {
   const {OAuth2} = google.auth
   const oauth2Client = new OAuth2(
@@ -19,8 +30,11 @@ module.exports = function setRoutes (app) {
   // This handler fetches Google Analytics account summaries,
   // then populates an install field with the entries.
   app.post('/', function (request, response) {
+    const handleAPIError = createErrorHandler(response, 'OAuth Login API Error')
     const {install, authentications = {}} = request.body
     const authenticated = !!(authentications.account && authentications.account.token)
+
+    install.schema.properties.noAccountHelp.type = 'hidden'
 
     if (!authenticated) {
       // User has logged out. Reset schema.
@@ -45,20 +59,19 @@ module.exports = function setRoutes (app) {
       return
     }
 
-    function handleAPIError (error) {
-      console.error('OAuth Login API Error', error)
-
-      response.json({
-        proceed: false,
-        errors: [{type: '400', message: error.toString()}]
-      })
-    }
-
     oauth2Client.setCredentials({
       access_token: request.body.authentications.account.token.token
     })
 
-    const fetchAccountSummaries = new Promise((resolve, reject) => {
+    const checkAnalyticsAccount = () => new Promise((resolve, reject) => {
+      analytics.management.accounts.list({}, (error, accounts) => {
+        if (error) return reject(error)
+
+        return resolve(accounts)
+      })
+    })
+
+    const fetchAccountSummaries = () => new Promise((resolve, reject) => {
       analytics.management.accountSummaries.list({}, (error, accountSummaries) => {
         if (error) return reject(error)
 
@@ -66,90 +79,76 @@ module.exports = function setRoutes (app) {
       })
     })
 
-    // const createAccount = new Promise((resolve, reject) => {
-    //   console.log('createAccount')
-    // })
+    checkAnalyticsAccount()
+      .then(() => {
+        fetchAccountSummaries()
+          .then(accountSummaries => {
+            const accountIds = []
+            const accountIdNames = {}
 
-    const checkAnalyticsAccount = new Promise((resolve, reject) => {
-      analytics.management.accounts.list({}, (error, accounts) => {
-        if (error) {
-          // if (error.code === 403) return resolve(createAccount)
-          return reject(error)
-        }
+            // Populate each account as an "Organization".
+            accountSummaries.items.forEach((account, index) => {
+              accountIds.push(account.id)
+              accountIdNames[account.id] = account.name
+            })
 
-        return resolve(accounts)
+            Object.assign(install.schema.properties.organization, {
+              enum: accountIds,
+              enumNames: accountIdNames,
+              default: accountIds[0]
+            })
+
+            install.options.organization = accountIds[0]
+
+            // Populate each organization's web properties.
+            const {webPropertyTemplate} = install.schema.properties
+            const namePattern = /\$ORGANIZATION/g
+
+            install.options.webPropertySchemaNames = []
+
+            accountSummaries.items.forEach((account, index) => {
+              const schemaName = WEB_PROPERTY_PREFIX + account.id
+              const webPropertyIds = []
+              const webPropertyNames = {}
+
+              account.webProperties.forEach(property => {
+                webPropertyIds.push(property.id)
+                webPropertyNames[property.id] = webPropertyLabel(property)
+              })
+
+              install.schema.properties[schemaName] = Object.assign({}, webPropertyTemplate, {
+                showIf: {
+                  organization: account.id
+                },
+                type: 'string',
+                title: webPropertyTemplate.title.replace(namePattern, account.name),
+                order: webPropertyTemplate.order + index,
+                default: webPropertyIds[0],
+                enum: webPropertyIds,
+                enumNames: webPropertyNames
+              })
+
+              install.options[schemaName] = webPropertyIds[0]
+              install.options.webPropertySchemaNames.push(schemaName)
+            })
+
+            response.json({install})
+          })
+          .catch(handleAPIError)
       })
-    })
+      .catch(error => {
+        if (error.code !== 403) return handleAPIError(error)
 
-    checkAnalyticsAccount
-      .catch(handleAPIError)
-      .then(() => fetchAccountSummaries)
-      .catch(handleAPIError)
-      .then(accountSummaries => {
-        const accountIds = []
-        const accountIdNames = {}
-
-        // Populate each account as an "Organization".
-        accountSummaries.items.forEach((account, index) => {
-          accountIds.push(account.id)
-          accountIdNames[account.id] = account.name
-        })
-
-        Object.assign(install.schema.properties.organization, {
-          enum: accountIds,
-          enumNames: accountIdNames,
-          default: accountIds[0]
-        })
-
-        install.options.organization = accountIds[0]
-
-        // Populate each organization's web properties.
-        const {webPropertyTemplate} = install.schema.properties
-        const namePattern = /\$ORGANIZATION/g
-
-        install.options.webPropertySchemaNames = []
-
-        accountSummaries.items.forEach((account, index) => {
-          const schemaName = WEB_PROPERTY_PREFIX + account.id
-          const webPropertyIds = []
-          const webPropertyNames = {}
-
-          account.webProperties.forEach(property => {
-            webPropertyIds.push(property.id)
-            webPropertyNames[property.id] = webPropertyLabel(property)
-          })
-
-          install.schema.properties[schemaName] = Object.assign({}, webPropertyTemplate, {
-            showIf: {
-              organization: account.id
-            },
-            type: 'string',
-            title: webPropertyTemplate.title.replace(namePattern, account.name),
-            order: webPropertyTemplate.order + index,
-            default: webPropertyIds[0],
-            enum: webPropertyIds,
-            enumNames: webPropertyNames
-          })
-
-          install.options[schemaName] = webPropertyIds[0]
-          install.options.webPropertySchemaNames.push(schemaName)
-        })
+        // Customer does not have a Google Analytics account.
+        install.schema.properties.noAccountHelp.type = 'help'
+        install.options.account = null
 
         response.json({install})
       })
-      .catch(handleAPIError)
   })
 
   app.post('/provision', function (request, response) {
-    function handleAPIError (error) {
-      console.error('Google Analytics Provision API Error', error)
-
-      response.json({
-        proceed: false,
-        errors: [{type: '400', message: error.toString()}]
-      })
-    }
-
+    const handleAPIError = createErrorHandler(response, 'Google Analytics Provision API Error')
     const {install, metadata} = request.body
 
     oauth2Client.setCredentials({
@@ -181,7 +180,8 @@ module.exports = function setRoutes (app) {
         response.json({install})
       })
     } else if (metadata.key === 'organization') {
-      // org
+      // analytics.provisioning.createAccountTicket()
+      handleAPIError(new Error('Account creation not yet supported.'))
     } else {
       handleAPIError(new Error(`Unknown metadata key ${metadata.key}`))
     }
@@ -189,33 +189,27 @@ module.exports = function setRoutes (app) {
 
   app.post('/post-install', function (request, response) {
     const {install} = request.body
-
-    // Include link to Google Analytics Dashboard.
-    // TODO: Is it possible to link to a particular web property?
-    install.links = [{
+    const link = {
       title: 'Google Analytics',
       description: 'Visit Google Analytics to track your site\'s activity.',
       href: 'https://analytics.google.com'
-    }]
+    }
 
+    install.links = [link]
     response.json({install})
   })
 
   // Account metadata handler.
   // This handler fetches user info and populates the login entry with user's email address.
   app.get('/account-metadata', function (request, response) {
+    const handleAPIError = createErrorHandler(response, 'Metadata API Error')
+
     oauth2Client.setCredentials({
       access_token: request.headers.authorization.replace('Bearer ', '')
     })
 
     oauth.userinfo.v2.me.get({}, (error, userInfo) => {
-      if (error) {
-        response.json({
-          proceed: false,
-          errors: [{type: '400', message: error.toString()}]
-        })
-        return
-      }
+      if (error) return handleAPIError(error)
 
       response.json({
         metadata: {
