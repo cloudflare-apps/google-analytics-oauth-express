@@ -132,7 +132,7 @@ module.exports = function setRoutes (app) {
               install.options.webPropertySchemaNames.push(schemaName)
             })
 
-            response.json({install})
+            response.json({install, proceed: true})
           })
           .catch(handleAPIError)
       })
@@ -143,7 +143,7 @@ module.exports = function setRoutes (app) {
         install.schema.properties.noAccountHelp.type = 'help'
         install.options.account = null
 
-        response.json({install})
+        response.json({install, proceed: true})
       })
   })
 
@@ -177,7 +177,7 @@ module.exports = function setRoutes (app) {
 
         install.options[metadata.key] = property.id
 
-        response.json({install})
+        response.json({install, proceed: true})
       })
     } else if (metadata.key === 'organization') {
       // analytics.provisioning.createAccountTicket()
@@ -196,7 +196,7 @@ module.exports = function setRoutes (app) {
     }
 
     install.links = [link]
-    response.json({install})
+    response.json({install, proceed: true})
   })
 
   // Account metadata handler.
